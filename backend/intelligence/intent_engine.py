@@ -1,55 +1,25 @@
-class IntentEngine:
+﻿def detect_intent(command):
+    command = " ".join(command.lower().strip().split())
 
-    def analyze(self, request):
+    if not command:
+        return "empty"
 
-        request = request.lower()
+    email_words = [
+        "draft email", "write email", "compose email",
+        "create email", "draft an email", "write an email",
+        "compose an email", "send an email", "email to"
+    ]
 
-        intents = []
+    if any(word in command for word in email_words):
+        return "communication"
 
-        scheduling_words = [
-            "schedule",
-            "meeting",
-            "calendar",
-            "appointment",
-            "book",
-            "reschedule"
-        ]
+    calendar_words = [
+        "meeting", "meetings", "calendar", "schedule",
+        "appointment", "appointments", "events", "event",
+        "agenda", "upcoming", "my plans"
+    ]
 
-        communication_words = [
-            "send",
-            "message",
-            "email",
-            "notify",
-            "tell",
-            "contact"
-        ]
+    if any(word in command for word in calendar_words):
+        return "calendar"
 
-        file_words = [
-            "file",
-            "document",
-            "report",
-            "presentation",
-            "pdf",
-            "folder",
-            "find"
-        ]
-
-        for word in scheduling_words:
-            if word in request:
-                intents.append("scheduling")
-                break
-
-        for word in communication_words:
-            if word in request:
-                intents.append("communication")
-                break
-
-        for word in file_words:
-            if word in request:
-                intents.append("file_data")
-                break
-
-        if not intents:
-            intents.append("unknown")
-
-        return intents
+    return "unknown"

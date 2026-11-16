@@ -1,0 +1,106 @@
+import { useState } from "react";
+import "./App.css";
+export default function App() {
+  const [command, setCommand] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  async function runCommand(e) {
+    e.preventDefault();
+    if (!command.trim() || loading) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch("http://127.0.0.1:8000/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command: command.trim() }),
+        signal: controller.signal
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Command failed");
+      setResult(data);
+    } catch (err) {
+      setError(
+        err.name === "AbortError"
+          ? "The request timed out. Check the backend terminal."
+          : err.message || "Unable to connect to AgentOS."
+      );
+    } finally {
+      clearTimeout(timer);
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand"><span className="brand-icon">A</span> AgentOS</div>
+        <span className="status"><span /> SYSTEM INTERFACE</span>
+      </header>
+      <main className="dashboard">
+        <section className="hero">
+          <span className="eyebrow">YOUR PERSONAL AI WORKSPACE</span>
+          <h1>One command.<br /><span>Multiple possibilities.</span></h1>
+          <p>Coordinate your tasks and applications through one intelligent assistant.</p>
+        </section>
+        <section className="command-card">
+          <label htmlFor="command">What would you like AgentOS to do?</label>
+          <form onSubmit={runCommand}>
+            <input
+              id="command"
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              placeholder="e.g. Show my upcoming meetings"
+              disabled={loading}
+            />
+            <button disabled={loading || !command.trim()} type="submit">
+              {loading ? "Processing..." : "Run Command"}
+              {!loading && <span> ?</span>}
+            </button>
+          </form>
+          <div className="suggestions">
+            <span>TRY</span>
+            <button type="button" onClick={() => setCommand("Show my upcoming meetings")}>
+              Upcoming meetings
+            </button>
+            <button type="button" onClick={() => setCommand("Show my calendar events")}>
+              Calendar events
+            </button>
+          </div>
+        </section>
+        {loading && (
+          <section className="result-card" role="status">
+            <div className="loader" />
+            <div><strong>AgentOS is working</strong><p>Waiting for your agent to respond...</p></div>
+          </section>
+        )}
+        {error && <section className="result-card error"><strong>Request failed</strong><p>{error}</p></section>}
+        {result && (
+          <section className="result-card">
+            <div className="result-heading">
+              <div><span className="eyebrow">EXECUTION RESULT</span><h2>{result.agent || "AgentOS"}</h2></div>
+              <span className="result-badge">Response received</span>
+            </div>
+            <p>{result.message || result.task || "Command completed."}</p>
+            {result.events?.length > 0 && (
+              <div className="events">
+                <h3>Upcoming events</h3>
+                {result.events.map((event, i) => (
+                  <article className="event" key={`${event.start}-${i}`}>
+                    <span className="event-mark">?</span>
+                    <div><strong>{event.title}</strong><p>{event.start}</p></div>
+                  </article>
+                ))}
+              </div>
+            )}
+            {result.events?.length === 0 && result.agent && <p>No calendar events were returned.</p>}
+          </section>
+        )}
+        <footer>AgentOS � Multi-agent workflow assistant</footer>
+      </main>
+    </div>
+  );
+}

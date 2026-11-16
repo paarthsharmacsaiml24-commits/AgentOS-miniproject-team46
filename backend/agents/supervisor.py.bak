@@ -1,0 +1,25 @@
+from agents.scheduler import get_calendar_events
+from intelligence.intent_engine import detect_intent
+class SupervisorAgent:
+    def process(self, command):
+        intent = detect_intent(command)
+        if intent == "empty":
+            return {
+                "agent": "Supervisor",
+                "intent": intent,
+                "message": "Please enter a command.",
+                "events": []
+            }
+        if intent == "calendar":
+            return {
+                "agent": "Scheduler",
+                "intent": intent,
+                "message": "Here are your upcoming calendar events.",
+                "events": get_calendar_events()
+            }
+        return {
+            "agent": "Supervisor",
+            "intent": intent,
+            "message": "I cannot handle that command yet. Try asking about your calendar or meetings.",
+            "events": []
+        }

@@ -1,0 +1,6 @@
+﻿{
+  "schedule_name": "My Appointment Schedule",
+  "duration": "Set your appointment duration",
+  "timezone": "Asia/Kolkata",
+  "booking_url": "PASTE_YOUR_BOOKING_PAGE_LINK_HERE"
+}

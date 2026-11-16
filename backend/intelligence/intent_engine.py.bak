@@ -1,0 +1,16 @@
+def detect_intent(command):
+    command = " ".join(command.lower().strip().split())
+
+    if not command:
+        return "empty"
+
+    calendar_words = [
+        "meeting", "meetings", "calendar", "schedule",
+        "appointment", "appointments", "events", "event",
+        "agenda", "upcoming", "my plans"
+    ]
+
+    if any(word in command for word in calendar_words):
+        return "calendar"
+
+    return "unknown"

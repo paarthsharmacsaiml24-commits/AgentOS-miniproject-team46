@@ -1,28 +1,30 @@
+﻿from agents.scheduler import get_calendar_events
+from agents.communication import CommunicationAgent
+from intelligence.intent_engine import detect_intent
 class SupervisorAgent:
-
-    def process(self, request):
-
-        request = request.lower()
-
-        if "meeting" in request or "schedule" in request:
+    def __init__(self):
+        self.communication_agent = CommunicationAgent()
+    def process(self, command):
+        intent = detect_intent(command)
+        if intent == "empty":
             return {
-                "agent": "scheduler",
-                "task": request
+                "agent": "Supervisor",
+                "intent": "empty",
+                "message": "Please enter a command.",
+                "events": []
             }
-
-        if "message" in request or "send" in request:
+        if intent == "communication":
+            return self.communication_agent.process(command)
+        if intent == "calendar":
             return {
-                "agent": "communication",
-                "task": request
+                "agent": "Scheduler",
+                "intent": "calendar",
+                "message": "Here are your upcoming calendar events.",
+                "events": get_calendar_events()
             }
-
-        if "file" in request or "document" in request:
-            return {
-                "agent": "file_data",
-                "task": request
-            }
-
         return {
-            "agent": "unknown",
-            "task": request
+            "agent": "Supervisor",
+            "intent": "unknown",
+            "message": "I cannot handle that command yet. Try asking about your calendar or drafting an email.",
+            "events": []
         }

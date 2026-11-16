@@ -1,0 +1,57 @@
+﻿import re
+class CommunicationAgent:
+    def process(self, command):
+        text = command.strip()
+        if not text:
+            return {
+                "status": "needs_input",
+                "message": "Please describe the email you want to draft.",
+                "draft": None
+            }
+        recipient_match = re.search(
+            r"\bto\s+(.+?)(?=\s*\|\s*subject:|\s*\|\s*message:|$)",
+            text,
+            re.IGNORECASE
+        )
+        subject_match = re.search(
+            r"\bsubject:\s*(.+?)(?=\s*\|\s*message:|$)",
+            text,
+            re.IGNORECASE
+        )
+        message_match = re.search(
+            r"\bmessage:\s*(.+)$",
+            text,
+            re.IGNORECASE
+        )
+        recipient = recipient_match.group(1).strip() if recipient_match else ""
+        subject = subject_match.group(1).strip() if subject_match else ""
+        body = message_match.group(1).strip() if message_match else ""
+
+        if not subject:
+            subject = "Follow-up"
+        if not body:
+            body = (
+                "Hi"
+                + (f" {recipient.split()[0]}" if recipient else "")
+                + ",\n\n"
+                + "I hope you are doing well.\n\n"
+                + "I wanted to reach out regarding "
+                + re.sub(
+                    r"^(please\s+)?(draft|write|compose|create)\s+(an?\s+)?(email|mail)\s*",
+                    "",
+                    text,
+                    flags=re.IGNORECASE
+                ).strip(" .")
+                + ".\n\nBest regards"
+            )
+        return {
+            "status": "draft_only",
+            "agent": "Communication",
+            "message": "Email draft created. Nothing has been sent.",
+            "draft": {
+                "recipient": recipient,
+                "subject": subject,
+                "body": body
+            },
+            "sent": False
+        }

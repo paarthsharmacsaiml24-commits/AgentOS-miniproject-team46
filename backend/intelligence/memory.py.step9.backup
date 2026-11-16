@@ -1,0 +1,66 @@
+
+import sqlite3
+import json
+from pathlib import Path
+from datetime import datetime, timezone
+
+DB_PATH = Path(__file__).resolve().parent.parent / "agent_memory.db"
+
+
+def get_connection():
+    return sqlite3.connect(DB_PATH)
+
+
+def initialize_memory():
+    with get_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS task_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                command TEXT NOT NULL,
+                tasks TEXT,
+                results TEXT,
+                status TEXT,
+                created_at TEXT
+            )
+        """)
+
+
+def save_execution(command, tasks, results, status):
+    with get_connection() as conn:
+        conn.execute("""
+            INSERT INTO task_history
+            (command, tasks, results, status, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            command,
+            json.dumps(tasks),
+            json.dumps(results),
+            status,
+            datetime.now(timezone.utc).isoformat()
+        ))
+
+
+def get_history(limit=10):
+    with get_connection() as conn:
+        conn.row_factory = sqlite3.Row
+
+        rows = conn.execute("""
+            SELECT * FROM task_history
+            ORDER BY id DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
+
+        return [
+            {
+                "id": row["id"],
+                "command": row["command"],
+                "tasks": json.loads(row["tasks"] or "[]"),
+                "results": json.loads(row["results"] or "[]"),
+                "status": row["status"],
+                "created_at": row["created_at"]
+            }
+            for row in rows
+        ]
+
+
+initialize_memory()

@@ -1,0 +1,62 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from agents.agent_graph import process_command
+from agents.scheduler import get_calendar_events
+from intelligence.memory import get_history
+app = FastAPI(title="AgentOS API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+class CommandRequest(BaseModel):
+    command: str
+@app.get("/")
+def home():
+    return {
+        "message": "AgentOS API is running",
+        "engine": "LangGraph"
+    }
+@app.get("/calendar/events")
+def calendar_events():
+    try:
+        return {"events": get_calendar_events()}
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=str(error)
+        )
+@app.post("/command")
+def execute_command(request: CommandRequest):
+    try:
+        if not request.command.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Please enter a command."
+            )
+        return process_command(request.command)
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=str(error)
+        )
+@app.get("/history")
+def task_history(limit: int = 10):
+    if limit < 1 or limit > 100:
+        raise HTTPException(
+            status_code=400,
+            detail="Limit must be between 1 and 100."
+        )
+    return {
+        "history": get_history(limit)
+    }
